@@ -1,0 +1,10 @@
+<reddot threads="4">
+	<image width="500" height="500">
+		<!--<filter type="mitchell" b="0.333" c="0.333" size="2" />-->
+		<filter type="gaussian" alpha="2" size="2" />
+		<!--<filter type="tent" size="1.5" />-->
+		<!--<filter type="box" size="4" />-->
+	</image>
+	<camera type="pinhole" eye="0 0 -8.037" fov="39.1" lookAt="0 0 0" />
+	<obj filename="cornellbox.obj" />
+</reddot>
