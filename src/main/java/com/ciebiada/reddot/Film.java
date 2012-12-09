@@ -13,67 +13,59 @@ import java.awt.image.BufferedImage;
 
 public class Film {
 
+    private final int width, height;
+    private final double[] rgb;
+    private final double[] weights;
+
+    private final double filterSize;
+    private final double[] filterTable;
     private final static int FILTER_RES = 128;
     private final static int FILTER_TABLE_SIZE = FILTER_RES + 1;
 
-    private int samples;
-
-    private int width, height;
-    private Col[] pixels;
-    private float[] weights;
-    private float[] filterTable;
-
-    private float filterSize;
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
+    private long samples;
 
     public Film(int width, int height, Filter filter) {
         this.width = width;
         this.height = height;
         filterSize = filter.getSize();
 
-        pixels = new Col[width * height];
-        weights = new float[width * height];
-        for (int i = 0; i < pixels.length; i++) {
-            pixels[i] = new Col(0);
-            weights[i] = 0;
-        }
+        rgb = new double[width * height * 3];
+        weights = new double[width * height];
 
-        filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
+        filterTable = new double[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
         for (int x = 0; x < FILTER_TABLE_SIZE; x++) {
             for (int y = 0; y < FILTER_TABLE_SIZE; y++) {
-                filterTable[y * FILTER_TABLE_SIZE + x] = filter.get(
-                        (x + 0.5f) * filterSize / FILTER_RES,
-                        (y + 0.5f) * filterSize / FILTER_RES);
+                filterTable[y * FILTER_TABLE_SIZE + x] =
+                        filter.get((x + 0.5f) * filterSize / FILTER_RES,
+                                (y + 0.5f) * filterSize / FILTER_RES);
             }
         }
 
     }
 
-    public void store(float a, float b, Col c) {
-        float sx = a * width;
-        float sy = b * height;
+    public void store(double a, double b, Col c) {
+        double sx = a * width;
+        double sy = b * height;
 
-        int x0 = Utils.max(0, Utils.simpleCeil(sx - filterSize));
-        int y0 = Utils.max(0, Utils.simpleCeil(sy - filterSize));
+        int x0 = Math.max(0, Utils.simpleCeil(sx - filterSize));
+        int y0 = Math.max(0, Utils.simpleCeil(sy - filterSize));
 
-        int x1 = Utils.min(width - 1, Utils.simpleFloor(sx + filterSize));
-        int y1 = Utils.min(height - 1, Utils.simpleFloor(sy + filterSize));
+        int x1 = Math.min(width - 1, Utils.simpleFloor(sx + filterSize));
+        int y1 = Math.min(height - 1, Utils.simpleFloor(sy + filterSize));
 
         for (int y = y0; y <= y1; ++y) {
             for (int x = x0; x <= x1; ++x) {
-                int fx = (int) (Utils.abs(x - sx) / filterSize * FILTER_RES);
-                int fy = (int) (Utils.abs(y - sy) / filterSize * FILTER_RES);
-                float weight = filterTable[fy * FILTER_TABLE_SIZE + fx];
+                int fx = (int) (Math.abs(x - sx) / filterSize * FILTER_RES);
+                int fy = (int) (Math.abs(y - sy) / filterSize * FILTER_RES);
+                double weight = filterTable[fy * FILTER_TABLE_SIZE + fx];
 
                 int idx = y * width + x;
-                pixels[idx].addSet(c.mul(weight));
+
+                Col pixel = c.mul(weight);
+                rgb[idx * 3] += pixel.r;
+                rgb[idx * 3 + 1] += pixel.g;
+                rgb[idx * 3 + 2] += pixel.b;
+
                 weights[idx] += weight;
             }
         }
@@ -81,18 +73,18 @@ public class Film {
         samples++;
     }
 
-    public int getSamples() {
+    public long getSamples() {
         return samples;
     }
 
     public BufferedImage getImage() {
         BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        float logsum = 0;
-        float l2white = 0;
+        double logsum = 0;
+        double l2white = 0;
         int pixelsCount = 0;
         for (int i = 0; i < width * height; i++) {
-            Col pix = pixels[i].mul(1 / weights[i]);
+            Col pix = new Col(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]).mul(1 / weights[i]);
             if (pix.lum() < Utils.EPS)
                 continue;
             logsum += Math.log(pix.lum());
@@ -102,17 +94,17 @@ public class Film {
         }
         l2white *= l2white;
 
-        float key = (float) Math.exp(logsum / (pixelsCount));
-        float a = 0.18f;
+        double key = Math.exp(logsum / (pixelsCount));
+        double a = 0.18f;
 
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 int idx = y * width + x;
-                Col pix = pixels[idx].mul(1 / weights[idx]);
-                float l = a / key * pix.lum();
-                float ld = (l * (1 + l / l2white)) / (1 + l);
-//                bi.setRGB(x, height - 1 - y, pix.mul(ld / pix.lum()).toInt());
-                bi.setRGB(x, height - 1 - y, pix.toInt());
+                Col pix = new Col(rgb[idx * 3], rgb[idx * 3 + 1], rgb[idx * 3 + 2]).mul(1 / weights[idx]);
+                double l = a / key * pix.lum();
+                double ld = (l * (1 + l / l2white)) / (1 + l);
+                bi.setRGB(x, height - 1 - y, pix.mul(ld / pix.lum()).toInt());
+//                bi.setRGB(x, height - 1 - y, pix.toInt());
             }
         }
 

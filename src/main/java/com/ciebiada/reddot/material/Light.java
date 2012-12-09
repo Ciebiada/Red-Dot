@@ -5,27 +5,23 @@
 
 package com.ciebiada.reddot.material;
 
-import com.ciebiada.reddot.material.brdf.AbsorpBrdf;
-import com.ciebiada.reddot.material.brdf.Brdf;
-import com.ciebiada.reddot.material.brdf.DiffuseBrdf;
 import com.ciebiada.reddot.math.Col;
 import com.ciebiada.reddot.math.Ray;
+import com.ciebiada.reddot.math.Vec;
+import com.ciebiada.reddot.primitive.HitData;
 import com.ciebiada.reddot.sampler.Sampler;
 
 public class Light extends Material {
 
     private Col emittance;
 
-    private Brdf brdf;
-
     public Light(Col emittance) {
         this.emittance = emittance;
-        brdf = new AbsorpBrdf();
     }
 
     @Override
-    public Brdf getBrdf(Ray ray, Sampler sampler) {
-        return brdf;
+    public Brdf getBrdf(Ray ray, HitData hit, Sampler sampler) {
+        return new Brdf();
     }
 
     @Override

@@ -5,20 +5,21 @@
 
 package com.ciebiada.reddot.filter;
 
-public class Gaussian extends Filter {
+public final class Gaussian extends Filter {
 
-    private float alpha, exp;
+    private final double alpha, exp;
 
-    public Gaussian(float size, float alpha) {
+    public Gaussian(double size, double alpha) {
         super(size);
+
         this.alpha = alpha;
-        exp = (float) Math.exp(-alpha * size * size);
+        exp = Math.exp(-alpha * size * size);
     }
 
     @Override
-    public float get(float x, float y) {
-        float gx = (float) Math.exp(-alpha * x * x) - exp;
-        float gy = (float) Math.exp(-alpha * y * y) - exp;
+    public double get(double x, double y) {
+        double gx = Math.exp(-alpha * x * x) - exp;
+        double gy = Math.exp(-alpha * y * y) - exp;
         return gx * gy;
     }
 }

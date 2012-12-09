@@ -11,7 +11,5 @@ import com.ciebiada.reddot.sampler.Sampler;
 
 public abstract class Camera {
 
-	public abstract Ray getRay(float x, float y, Sampler sampler);
-
-    public abstract Vec getEye();
+	public abstract Ray getRay(double x, double y, double[] sample);
 }

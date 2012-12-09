@@ -5,21 +5,28 @@
 
 package com.ciebiada.reddot.material;
 
-import com.ciebiada.reddot.material.brdf.Brdf;
-import com.ciebiada.reddot.material.brdf.DiffuseBrdf;
 import com.ciebiada.reddot.math.*;
+import com.ciebiada.reddot.primitive.HitData;
 import com.ciebiada.reddot.sampler.Sampler;
 
 public class Diffuse extends Material {
 
-    private Brdf brdf;
+    private final Col diffuse;
 
     public Diffuse(Col diffuse) {
-        brdf = new DiffuseBrdf(diffuse);
+        this.diffuse = diffuse;
     }
 
     @Override
-    public Brdf getBrdf(Ray ray, Sampler sampler) {
-        return brdf;
+    public Brdf getBrdf(Ray ray, HitData hit, Sampler sampler) {
+        return new Brdf(diffuse, getDiffuseDirection(ray, hit.basis, sampler.getSample()));
+    }
+
+    static Vec getDiffuseDirection(Ray ray, OBasis basis, double[] sample) {
+        double phi = 2 * Math.PI * sample[0];
+        double r2 = sample[1];
+        double r2s = Math.sqrt(r2);
+
+        return basis.transform(r2s * Math.cos(phi), r2s * Math.sin(phi), Math.sqrt(1 - sample[1]));
     }
 }

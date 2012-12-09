@@ -12,8 +12,8 @@ import com.ciebiada.reddot.sampler.Sampler;
 
 public class BVH extends Primitive {
 
-    private BBox bbox;
-    private Primitive left, right;
+    private final BBox bbox;
+    private final Primitive left, right;
 
     private BVH(BBox bbox, Primitive left, Primitive right) {
         this.bbox = bbox;
@@ -25,24 +25,16 @@ public class BVH extends Primitive {
         if (r - l == 1)
             return primitives[l];
 
-        BBox bbox = new BBox();
-
-        for (int i = l; i < r; ++i) {
-            bbox.fit(primitives[i].getMin());
-            bbox.fit(primitives[i].getMax());
-        }
-
-        bbox.getMin().subSet(new Vec(1e-4f));
-        bbox.getMax().addSet(new Vec(1e-4f));
+        BBox bbox = getBBox(primitives, l, r);
 
         Vec extent = bbox.getMax().sub(bbox.getMin());
         int axis = (extent.x > extent.y) ? ((extent.x > extent.z) ? 0 : 2) : ((extent.y > extent.z) ? 1 : 2);
-        float pivot = (bbox.getMin().get(axis) + bbox.getMax().get(axis)) * 0.5f;
+        double pivot = (bbox.getMin().get(axis) + bbox.getMax().get(axis)) * 0.5f;
 
         int moved = l;
 
         for (int i = l; i < r; ++i) {
-            float cen = (primitives[i].getMin().get(axis) + primitives[i].getMax().get(axis)) * 0.5f;
+            double cen = (primitives[i].getMin().get(axis) + primitives[i].getMax().get(axis)) * 0.5f;
             if (cen <= pivot) {
                 Primitive tmp = primitives[i];
                 primitives[i] = primitives[moved];
@@ -57,26 +49,60 @@ public class BVH extends Primitive {
         return new BVH(bbox, build(primitives, l, moved), build(primitives, moved, r));
     }
 
+    private static BBox getBBox(Primitive[] primitives, int l, int r) {
+        double minx = Double.POSITIVE_INFINITY;
+        double miny = Double.POSITIVE_INFINITY;
+        double minz = Double.POSITIVE_INFINITY;
+        double maxx = Double.NEGATIVE_INFINITY;
+        double maxy = Double.NEGATIVE_INFINITY;
+        double maxz = Double.NEGATIVE_INFINITY;
+
+        for (int i = l; i < r; ++i) {
+            Vec min = primitives[i].getMin();
+            if (min.x < minx)
+                minx = min.x;
+            if (min.y < miny)
+                miny = min.y;
+            if (min.z < minz)
+                minz = min.z;
+
+            Vec max = primitives[i].getMax();
+            if (max.x > maxx)
+                maxx = max.x;
+            if (max.y > maxy)
+                maxy = max.y;
+            if (max.z > maxz)
+                maxz = max.z;
+        }
+
+        return new BBox(new Vec(minx, miny, minz).sub(new Vec(1e-5)), new Vec(maxx, maxy, maxz).add(new Vec(1e-5)));
+    }
+
     @Override
-    public boolean hit(Ray ray) {
-        if (!bbox.hit(ray))
+    public Vec[] sample(double[] sample) {
+        return null;
+    }
+
+    @Override
+    public boolean hit(Ray ray, HitData hit) {
+        if (!bbox.hit(ray, hit.t))
             return false;
 
-        boolean hit1 = right.hit(ray);
-        boolean hit2 = left.hit(ray);
+        boolean hit1 = right.hit(ray, hit);
+        boolean hit2 = left.hit(ray, hit);
 
         return (hit1 || hit2);
     }
 
     @Override
-    public boolean shadowHit(Ray ray) {
-        if (!bbox.hit(ray))
+    public boolean shadowHit(Ray ray, double tmax) {
+        if (!bbox.hit(ray, tmax))
             return false;
 
-        if (right.shadowHit(ray))
+        if (right.shadowHit(ray, tmax))
             return true;
 
-        return left.shadowHit(ray);
+        return left.shadowHit(ray, tmax);
     }
 
     /**
@@ -85,11 +111,6 @@ public class BVH extends Primitive {
 
     @Override
     public Material getMat() {
-        return null;
-    }
-
-    @Override
-    public Vec[] sample(float[] sample) {
         return null;
     }
 
@@ -104,7 +125,7 @@ public class BVH extends Primitive {
     }
 
     @Override
-    public float getArea() {
+    public double getArea() {
         return 0;
     }
 }

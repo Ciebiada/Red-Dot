@@ -5,14 +5,14 @@
 
 package com.ciebiada.reddot.filter;
 
-public class Box extends Filter {
+public final class Box extends Filter {
 	
-	public Box(float size) {
+	public Box(double size) {
 		super(size);
 	}
 
     @Override
-	public float get(float x, float y) {
+	public double get(double x, double y) {
 		return 1;
 	}
 }

@@ -12,17 +12,18 @@ import com.ciebiada.reddot.sampler.Sampler;
 
 public abstract class Primitive {
 
-	public abstract Material getMat();
+    public abstract Vec[] sample(double[] sample);
 
-    public abstract Vec[] sample(float[] sample);
+    public abstract boolean hit(Ray ray, HitData hit);
+
+    public abstract boolean shadowHit(Ray ray, double tmax);
+
+    public abstract Material getMat();
 
     public abstract Vec getMin();
 
     public abstract Vec getMax();
 
-    public abstract float getArea();
+    public abstract double getArea();
 
-    public abstract boolean hit(Ray ray);
-
-    public abstract boolean shadowHit(Ray ray);
 }

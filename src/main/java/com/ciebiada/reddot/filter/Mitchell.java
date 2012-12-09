@@ -7,9 +7,9 @@ package com.ciebiada.reddot.filter;
 
 public class Mitchell extends Filter {
 
-    private float b, c, sizeInv;
+    private final double b, c, sizeInv;
 
-    public Mitchell(float size, float b, float c) {
+    public Mitchell(double size, double b, double c) {
         super(size);
         this.b = b;
         this.c = c;
@@ -17,11 +17,11 @@ public class Mitchell extends Filter {
     }
 
     @Override
-    public float get(float x, float y) {
+    public double get(double x, double y) {
         return mitchell1d(x * sizeInv) * mitchell1d(y * sizeInv);
     }
 
-    private float mitchell1d(float x) {
+    private double mitchell1d(double x) {
         x = Math.abs(2 * x);
         if (x > 1)
             return ((-b - 6 * c) * x * x * x + (6 * b + 30 * c) * x * x +

@@ -28,26 +28,41 @@ public class Main {
     private Timer timer;
     private JPanel statusBar;
     private JLabel status;
-
     private long timestamp = System.currentTimeMillis();
-    private int samplestamp;
-
+    private long samplestamp;
     private String pathToSave;
-
     private Scene scene;
 
-	public static void main(final String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Main window = new Main(args[0]);
-					window.frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+    public Main(String pathToOpen) throws IOException, SAXException, ParserConfigurationException {
+        scene = new Scene(pathToOpen);
+        setupThePathToSave(pathToOpen);
+
+		setupTheWindow();
+        updateImage();
+        frame.pack();
+        setupTimer();
+
+        scene.render();
+    }
+
+    private void setupThePathToSave(String pathToOpen) {
+        String filename = pathToOpen.substring(pathToOpen.lastIndexOf('/') + 1, pathToOpen.lastIndexOf('.')) + ".png";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        pathToSave = "output/" + sdf.format(new Date()) + "_" + filename;
+    }
+
+    private void setupTimer() {
+        ActionListener repaint = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateImage();
+                updateStatus();
+            }
+        };
+
+        timer = new Timer(7000, repaint);
+        timer.setInitialDelay(5000);
+        timer.start();
+    }
 
     private void setupTheWindow() {
         frame = new JFrame("Red Dot");
@@ -66,33 +81,29 @@ public class Main {
 
         frame.getContentPane().add(scrollPane);
         frame.getContentPane().add(statusBar, BorderLayout.SOUTH);
-    }
-
-    private void setupTimer() {
-        ActionListener repaint = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updateImage();
-                updateStatus();
-            }
-        };
-
-        timer = new Timer(7000, repaint);
-        timer.setInitialDelay(5000);
-        timer.start();
-    }
-
-    private void updateStatus() {
+    }    private void updateStatus() {
         long time = System.currentTimeMillis();
-        int samples = scene.film.getSamples();
+        long samples = scene.film.getSamples();
 
-        float elapsedTime = (time - timestamp) / 1000.0f;
+        long elapsedTime = (time - timestamp) / 1000;
         status.setText("Samples per second: " + ((samples - samplestamp) / elapsedTime));
 
         timestamp = time;
         samplestamp = samples;
     }
 
-    private void updateImage() {
+	public static void main(final String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					Main window = new Main(args[0]);
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}    private void updateImage() {
         BufferedImage image = scene.film.getImage();
         label.setIcon(new ImageIcon(image));
 
@@ -103,21 +114,7 @@ public class Main {
         }
     }
 
-    private void setupThePathToSave(String pathToOpen) {
-        String filename = pathToOpen.substring(pathToOpen.lastIndexOf('/') + 1, pathToOpen.lastIndexOf('.')) + ".png";
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
-        pathToSave = "output/" + sdf.format(new Date()) + "_" + filename;
-    }
 
-    public Main(String pathToOpen) throws IOException, SAXException, ParserConfigurationException {
-        scene = new Scene(pathToOpen);
-        setupThePathToSave(pathToOpen);
 
-		setupTheWindow();
-        updateImage();
-        frame.pack();
-        setupTimer();
 
-        scene.render();
-    }
 }

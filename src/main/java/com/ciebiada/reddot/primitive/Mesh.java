@@ -10,14 +10,13 @@ import com.ciebiada.reddot.math.Vec;
 
 public class Mesh {
 
-	protected Vec[] verts;
-    protected Vec[] normals;
+    protected final Vec[] verts;
+    protected final Vec[] normals;
+    protected final Material mat;
 
-    protected Material mat;
-	
-	public Mesh(Vec[] verts, Vec[] normals, Material mat) {
-		this.verts = verts;
+    public Mesh(Vec[] verts, Vec[] normals, Material mat) {
+        this.verts = verts;
         this.normals = normals;
-		this.mat = mat;
-	}
+        this.mat = mat;
+    }
 }

@@ -5,14 +5,14 @@
 
 package com.ciebiada.reddot.filter;
 
-public class Tent extends Filter {
+public final class Tent extends Filter {
 
-    public Tent(float size) {
+    public Tent(double size) {
         super(size);
     }
 
     @Override
-    public float get(float x, float y) {
+    public double get(double x, double y) {
         return Math.max(0, getSize() - Math.abs(x)) * Math.max(0, getSize() - Math.abs(y));
     }
 }

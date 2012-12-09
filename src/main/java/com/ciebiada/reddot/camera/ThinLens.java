@@ -5,43 +5,40 @@
 
 package com.ciebiada.reddot.camera;
 
+import com.ciebiada.reddot.math.OBasis;
 import com.ciebiada.reddot.math.Ray;
 import com.ciebiada.reddot.math.Vec;
 import com.ciebiada.reddot.sampler.Sampler;
 
-public class ThinLens extends Camera {
+public final class ThinLens extends Camera {
 
-	private Vec eye;
-	private Vec corner;
-	private Vec toTop, toRight;
+	private final Vec eye;
+	private final Vec corner;
+	private final Vec toTop, toRight;
 
-    private OrthoBasis ob;
+    private final OBasis ob;
 
-    private float lensSize;
+    private final double lensSize;
 
-	public ThinLens(Vec eye, Vec gaze, float fov, float ratio, float lensSize, float dist) {
+	public ThinLens(Vec eye, Vec gaze, double fov, double ratio, double lensSize, double dist) {
 		this.eye = eye;
         this.lensSize = lensSize;
 
-		float filmWidth = (float) Math.tan(Math.toRadians(fov / 2)) * dist * 2;
-		float filmHeight = filmWidth * ratio;
+		double filmWidth = Math.tan(Math.toRadians(fov / 2)) * dist * 2;
+		double filmHeight = filmWidth * ratio;
 
-        ob = new OrthoBasis(gaze);
+        ob = new OBasis(gaze);
 
-		corner = eye.add(gaze.mul(dist)).sub(ob.getRight().mul(filmWidth / 2)).sub(ob.getUp().mul(filmHeight / 2));
-		toTop = ob.getUp().mul(filmHeight);
-		toRight = ob.getRight().mul(filmWidth);
+		corner = eye.add(gaze.mul(dist)).sub(ob.getU().mul(filmWidth / 2)).sub(ob.getV().mul(filmHeight / 2));
+		toTop = ob.getV().mul(filmHeight);
+		toRight = ob.getU().mul(filmWidth);
 	}
 	
-	public Vec getEye() {
-		return eye;
-	}
-	
-	public Ray getRay(float x, float y, Sampler sampler) {
+	public Ray getRay(double x, double y, double[] sample) {
 		Vec onPlane = corner.add(toRight.mul(x)).add(toTop.mul(y));
-        float lx = lensSize * (sampler.get1dSample() - 0.5f);
-        float ly = lensSize * (sampler.get1dSample() - 0.5f);
-        Vec orig = eye.add(ob.getUp().mul(ly)).add(ob.getRight().mul(lx));
+        double lx = lensSize * (sample[0] - 0.5f);
+        double ly = lensSize * (sample[1] - 0.5f);
+        Vec orig = eye.add(ob.getV().mul(ly)).add(ob.getU().mul(lx));
 
 		return new Ray(orig, onPlane.sub(orig).norm());
 	}

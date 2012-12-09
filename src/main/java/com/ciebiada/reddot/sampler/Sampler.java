@@ -7,9 +7,9 @@ package com.ciebiada.reddot.sampler;
 
 public abstract class Sampler {
 
-    public abstract float get1dSample();
+    public abstract double get1dSample();
 
-    public abstract float[] getSample();
+    public abstract double[] getSample();
 
     public abstract void finishThisPath();
 }

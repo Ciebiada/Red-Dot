@@ -7,15 +7,15 @@ package com.ciebiada.reddot.filter;
 
 public abstract class Filter {
 
-	private float size;
+	private final double size;
 	
-	public Filter(float size) {
+	public Filter(double size) {
 		this.size = size;
 	}
 	
-	public float getSize() {
+	public double getSize() {
 		return size;
 	}
 	
-	public abstract float get(float x, float y);
+	public abstract double get(double x, double y);
 }

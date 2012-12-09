@@ -9,20 +9,20 @@ import java.util.Random;
 
 public class RandomSampler extends Sampler {
 
-    private Random random;
+    private final Random random;
 
     public RandomSampler(int seed) {
         random = new Random(seed);
     }
 
     @Override
-    public float get1dSample() {
-        return random.nextFloat();
+    public double get1dSample() {
+        return random.nextDouble();
     }
 
     @Override
-    public float[] getSample() {
-        return new float[] {get1dSample(), get1dSample()};
+    public double[] getSample() {
+        return new double[] {get1dSample(), get1dSample()};
     }
 
     @Override

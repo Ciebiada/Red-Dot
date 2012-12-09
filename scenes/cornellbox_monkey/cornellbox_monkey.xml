@@ -5,6 +5,6 @@
 		<!--<filter type="box" size="1" />-->
 		<!--<filter type="tent" size="1.5" />-->
 	</image>
-    <camera type="pinhole" eye="0 0 -8.037" fov="39.1" lookAt="0 0 0" />
+    <camera type="pinhole" eye="0 0 8.037" fov="39.1" lookAt="0 0 0" />
     <obj filename="cornellbox_monkey.obj" />
 </reddot>

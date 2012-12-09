@@ -5,7 +5,10 @@
 
 package com.ciebiada.reddot.primitive;
 
-import com.ciebiada.reddot.material.*;
+import com.ciebiada.reddot.material.Diffuse;
+import com.ciebiada.reddot.material.Light;
+import com.ciebiada.reddot.material.Material;
+import com.ciebiada.reddot.material.Phong;
 import com.ciebiada.reddot.math.Col;
 import com.ciebiada.reddot.math.Vec;
 
@@ -43,10 +46,10 @@ public class OBJParser {
                         verts.clear();
                         finishedVerts = false;
                     }
-                    verts.add(new Vec(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3])));
+                    verts.add(new Vec(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3])));
                     ++vertCount;
                 } else if (tokens[0].equals("vn")) {
-                    norms.add(new Vec(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3])));
+                    norms.add(new Vec(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3])));
                 } else if (tokens[0].equals("usemtl")) {
                     mat = mtl.get(tokens[1]);
                 } else if (tokens[0].equals("s")) {
@@ -73,7 +76,7 @@ public class OBJParser {
                     int p2idx = Integer.valueOf(p2[0]) - (vertCount - verts.size()) - 1;
 
                     if (smooth) {
-                        int n0idx = Integer.valueOf(p0[2]) - 1 ;
+                        int n0idx = Integer.valueOf(p0[2]) - 1;
                         int n1idx = Integer.valueOf(p1[2]) - 1;
                         int n2idx = Integer.valueOf(p2[2]) - 1;
                         if (normsLocal[p0idx] == null) normsLocal[p0idx] = norms.get(n0idx);
@@ -106,20 +109,20 @@ public class OBJParser {
             Col diffuse = null;
             Col specular = null;
             boolean glass = false;
-            float ior = 1;
+            double ior = 1;
 
             while ((line = in.readLine()) != null) {
                 String[] tokens = line.split(" ");
                 if (tokens[0].equals("newmtl")) {
                     key = tokens[1];
                 } else if (tokens[0].equals("Ns")) {
-                    ns = (int) Math.floor(Float.valueOf(tokens[1]));
+                    ns = (int) Math.floor(Double.valueOf(tokens[1]));
                 } else if (tokens[0].equals("Kd")) {
-                    diffuse = new Col(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3]));
+                    diffuse = new Col(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3]));
                 } else if (tokens[0].equals("Ks")) {
-                    specular = new Col(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3]));
+                    specular = new Col(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3]));
                 } else if (tokens[0].equals("d")) {
-                    float d = Float.valueOf(tokens[1]);
+                    double d = Double.valueOf(tokens[1]);
                     ior = d + 1.0f;
                     glass = (d < 1);
                 } else if (tokens[0].equals("illum")) {
@@ -131,7 +134,7 @@ public class OBJParser {
                             map.put(key, new Diffuse(diffuse));
                             break;
                         case 2:
-                            map.put(key, new Phong(specular, ns));
+                            map.put(key, new Phong(diffuse, specular, ns));
                             break;
                     }
                 }

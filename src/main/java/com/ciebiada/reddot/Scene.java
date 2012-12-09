@@ -42,13 +42,13 @@ public class Scene {
         File file = new File(filename);
         String dir = file.getParent();
 
-        List<Primitive> prims = OBJParser.parseObj(handler.fileName, dir + "/");
+        List<Primitive> primitives = OBJParser.parseObj(handler.fileName, dir + "/");
 
-        for (Primitive shape: prims)
+        for (Primitive shape: primitives)
             if (shape.getMat().isEmissive())
                 lights.add(shape);
 
-        bvh = BVH.build(prims.toArray(new Primitive[0]), 0, prims.size());
+        bvh = BVH.build(primitives.toArray(new Primitive[0]), 0, primitives.size());
     }
 
     public void render() {

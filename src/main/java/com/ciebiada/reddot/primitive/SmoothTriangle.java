@@ -5,17 +5,14 @@
 
 package com.ciebiada.reddot.primitive;
 
-import com.ciebiada.reddot.material.Material;
-import com.ciebiada.reddot.math.Ray;
 import com.ciebiada.reddot.math.Vec;
 
-public class SmoothTriangle extends Triangle {
+public final class SmoothTriangle extends Triangle {
 
-	private int a, b, c;
+    private final int a, b, c;
+    private final double area;
 
-    private float area;
-
-	public SmoothTriangle(int a, int b, int c, Mesh mesh) {
+    public SmoothTriangle(int a, int b, int c, Mesh mesh) {
         super(mesh);
 
         this.a = a;
@@ -26,8 +23,8 @@ public class SmoothTriangle extends Triangle {
     }
 
     @Override
-    public Vec getP0() {
-        return mesh.verts[a];
+    public Vec getP2() {
+        return mesh.verts[c];
     }
 
     @Override
@@ -36,8 +33,13 @@ public class SmoothTriangle extends Triangle {
     }
 
     @Override
-    public Vec getP2() {
-        return mesh.verts[c];
+    public Vec getP0() {
+        return mesh.verts[a];
+    }
+
+    @Override
+    public Vec getNormal(double beta, double gamma) {
+        return getN0().add(getN1().sub(getN0()).mul(beta)).add(getN2().sub(getN0()).mul(gamma));
     }
 
     public Vec getN0() {
@@ -53,13 +55,7 @@ public class SmoothTriangle extends Triangle {
     }
 
     @Override
-    public Vec getNormal(float beta, float gamma) {
-        Vec smoothNormal = getN0().add(getN1().sub(getN0()).mul(beta)).add(getN2().sub(getN0()).mul(gamma));
-        return smoothNormal;
-    }
-
-    @Override
-    public float getArea() {
+    public double getArea() {
         return area;
     }
 }
