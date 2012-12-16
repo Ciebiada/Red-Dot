@@ -7,6 +7,7 @@ package com.ciebiada.reddot.camera;
 
 import com.ciebiada.reddot.math.OBasis;
 import com.ciebiada.reddot.math.Ray;
+import com.ciebiada.reddot.math.Sample;
 import com.ciebiada.reddot.math.Vec;
 import com.ciebiada.reddot.sampler.Sampler;
 
@@ -34,10 +35,11 @@ public final class ThinLens extends Camera {
 		toRight = ob.getU().mul(filmWidth);
 	}
 	
-	public Ray getRay(double x, double y, double[] sample) {
+	public Ray getRay(double x, double y, Sampler sampler) {
+        Sample sample = sampler.getSample();
 		Vec onPlane = corner.add(toRight.mul(x)).add(toTop.mul(y));
-        double lx = lensSize * (sample[0] - 0.5f);
-        double ly = lensSize * (sample[1] - 0.5f);
+        double lx = lensSize * (sample.getX() - 0.5f);
+        double ly = lensSize * (sample.getY() - 0.5f);
         Vec orig = eye.add(ob.getV().mul(ly)).add(ob.getU().mul(lx));
 
 		return new Ray(orig, onPlane.sub(orig).norm());

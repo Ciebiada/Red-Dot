@@ -6,11 +6,7 @@
 package com.ciebiada.reddot.primitive;
 
 import com.ciebiada.reddot.material.Material;
-import com.ciebiada.reddot.math.OBasis;
-import com.ciebiada.reddot.math.Ray;
-import com.ciebiada.reddot.math.Utils;
-import com.ciebiada.reddot.math.Vec;
-import com.ciebiada.reddot.sampler.Sampler;
+import com.ciebiada.reddot.math.*;
 
 public abstract class Triangle extends Primitive {
 
@@ -21,9 +17,9 @@ public abstract class Triangle extends Primitive {
     }
 
     @Override
-    public Vec[] sample(double[] sample) {
-        double s = Math.sqrt(sample[0]);
-        double t = sample[1];
+    public Vec[] sample(Sample sample) {
+        double s = Math.sqrt(sample.getX());
+        double t = sample.getY();
 
         Vec point = getP0().mul(1 - s).add(getP1().mul(s * (1 - t))).add(getP2().mul(s * t));
         return new Vec[] {point, getNormal(s, t)};
@@ -73,10 +69,12 @@ public abstract class Triangle extends Primitive {
         if (t > Utils.EPS && t < hit.t) {
             hit.t = t;
             hit.primitive = this;
-            hit.point = ray.orig.add(ray.dir.mul(t));
+            hit.pos = ray.orig.add(ray.dir.mul(t));
             Vec normal = getNormal(u, v);
-            hit.basis = new OBasis(normal);
             hit.cosI = -normal.dot(ray.dir);
+            hit.norg = getGeometricNormal();
+            hit.nors = getNormal(u, v);
+            hit.basis = new OBasis(hit.nors);
             return true;
         }
 
@@ -157,4 +155,6 @@ public abstract class Triangle extends Primitive {
     public abstract Vec getP0();
 
     public abstract Vec getNormal(double beta, double gamma);
+
+    public abstract Vec getGeometricNormal();
 }

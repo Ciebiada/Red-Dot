@@ -29,7 +29,7 @@ public final class Pinhole extends Camera {
 		toRight = ob.getU().mul(filmWidth);
 	}
 	
-	public Ray getRay(double x, double y, double[] sample) {
+	public Ray getRay(double x, double y, Sampler sampler) {
 		Vec onPlane = corner.add(toRight.mul(x)).add(toTop.mul(y));
 		return new Ray(eye, onPlane.sub(eye).norm());
 	}

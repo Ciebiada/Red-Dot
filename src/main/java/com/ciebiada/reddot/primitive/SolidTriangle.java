@@ -46,6 +46,11 @@ public final class SolidTriangle extends Triangle {
     }
 
     @Override
+    public Vec getGeometricNormal() {
+        return nor;
+    }
+
+    @Override
     public double getArea() {
         return area;
     }

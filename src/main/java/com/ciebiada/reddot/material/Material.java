@@ -12,7 +12,7 @@ import com.ciebiada.reddot.sampler.Sampler;
 
 public abstract class Material {
 
-    public abstract Brdf getBrdf(Ray ray, HitData hit, Sampler sampler);
+    public abstract Brdf getBrdf(Ray ray, HitData hit, boolean adjoint, Sampler sampler);
 
     public Col getEmittance() {
         return Col.BLACK;

@@ -7,15 +7,17 @@ package com.ciebiada.reddot;
 
 import com.ciebiada.reddot.camera.Pinhole;
 import com.ciebiada.reddot.camera.ThinLens;
-import com.ciebiada.reddot.filter.*;
+import com.ciebiada.reddot.filter.BoxFilter;
+import com.ciebiada.reddot.filter.CubicSplineFilter;
+import com.ciebiada.reddot.filter.TriangleFilter;
 import com.ciebiada.reddot.math.Vec;
+import com.ciebiada.reddot.tracer.Tracer;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class SceneHandler extends DefaultHandler {
 
     int width, height;
-    Filter filter;
     String fileName;
     Scene scene;
 
@@ -27,22 +29,16 @@ public class SceneHandler extends DefaultHandler {
         if (qName.equalsIgnoreCase("image")) {
             width = Integer.valueOf(attributes.getValue("width"));
             height = Integer.valueOf(attributes.getValue("height"));
+            scene.film = new Film(width, height);
         } else if (qName.equalsIgnoreCase("filter")) {
             String type = attributes.getValue("type");
 
-            double size = Double.valueOf(attributes.getValue("size"));
-
-            if (type.equalsIgnoreCase("gaussian")) {
-                double alpha = Double.valueOf(attributes.getValue("alpha"));
-                filter = new Gaussian(size, alpha);
-            } else if (type.equalsIgnoreCase("mitchell")) {
-                double b = Double.valueOf(attributes.getValue("b"));
-                double c = Double.valueOf(attributes.getValue("c"));
-                filter = new Mitchell(size, b, c);
-            } else if (type.equalsIgnoreCase("tent")) {
-                filter = new Tent(size);
+            if (type.equalsIgnoreCase("triangle")) {
+                scene.filter = new TriangleFilter();
             } else if (type.equalsIgnoreCase("box")) {
-                filter = new Box(size);
+                scene.filter = new BoxFilter();
+            } else if (type.equalsIgnoreCase("spline")) {
+                scene.filter = new CubicSplineFilter();
             }
         } else if (qName.equalsIgnoreCase("obj")) {
             fileName = attributes.getValue("filename");
@@ -68,7 +64,7 @@ public class SceneHandler extends DefaultHandler {
             Integer threads = Integer.valueOf(attributes.getValue("threads"));
 
             for (int i = 0; i < threads; ++i) {
-                scene.threads.add(new Trace(scene, i));
+                scene.threads.add(new Tracer(scene, i));
             }
         }
     }

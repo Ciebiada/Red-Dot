@@ -5,7 +5,6 @@
 
 package com.ciebiada.reddot;
 
-import org.omg.CORBA.PRIVATE_MEMBER;
 import org.xml.sax.SAXException;
 
 import javax.imageio.ImageIO;
@@ -34,6 +33,11 @@ public class Main {
     private Scene scene;
 
     public Main(String pathToOpen) throws IOException, SAXException, ParserConfigurationException {
+        if (!pathToOpen.endsWith(".xml")) {
+            pathToOpen = pathToOpen.substring(0, pathToOpen.lastIndexOf('/'));
+            pathToOpen += pathToOpen.substring(pathToOpen.lastIndexOf('/'), pathToOpen.length()) + ".xml";
+        }
+
         scene = new Scene(pathToOpen);
         setupThePathToSave(pathToOpen);
 
@@ -83,7 +87,7 @@ public class Main {
         frame.getContentPane().add(statusBar, BorderLayout.SOUTH);
     }    private void updateStatus() {
         long time = System.currentTimeMillis();
-        long samples = scene.film.getSamples();
+        long samples = 0;//scene.film.getSamples();
 
         long elapsedTime = (time - timestamp) / 1000;
         status.setText("Samples per second: " + ((samples - samplestamp) / elapsedTime));
@@ -103,7 +107,9 @@ public class Main {
 				}
 			}
 		});
-	}    private void updateImage() {
+    }
+
+    private void updateImage() {
         BufferedImage image = scene.film.getImage();
         label.setIcon(new ImageIcon(image));
 

@@ -5,8 +5,6 @@
 
 package com.ciebiada.reddot.math;
 
-import com.ciebiada.reddot.math.Vec;
-
 public class OBasis {
 
     private final Vec u, v, w;
@@ -44,5 +42,4 @@ public class OBasis {
     public Vec transform(Vec vec) {
         return transform(vec.x, vec.y, vec.z);
     }
-
 }

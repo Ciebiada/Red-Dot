@@ -7,8 +7,8 @@ package com.ciebiada.reddot.primitive;
 
 import com.ciebiada.reddot.material.Material;
 import com.ciebiada.reddot.math.Ray;
+import com.ciebiada.reddot.math.Sample;
 import com.ciebiada.reddot.math.Vec;
-import com.ciebiada.reddot.sampler.Sampler;
 
 public class BVH extends Primitive {
 
@@ -79,7 +79,7 @@ public class BVH extends Primitive {
     }
 
     @Override
-    public Vec[] sample(double[] sample) {
+    public Vec[] sample(Sample sample) {
         return null;
     }
 
@@ -116,12 +116,12 @@ public class BVH extends Primitive {
 
     @Override
     public Vec getMin() {
-        return null;
+        return bbox.getMin();
     }
 
     @Override
     public Vec getMax() {
-        return null;
+        return bbox.getMax();
     }
 
     @Override

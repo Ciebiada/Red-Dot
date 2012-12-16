@@ -5,6 +5,8 @@
 
 package com.ciebiada.reddot.sampler;
 
+import com.ciebiada.reddot.math.Sample;
+
 import java.util.Random;
 
 public class RandomSampler extends Sampler {
@@ -21,11 +23,11 @@ public class RandomSampler extends Sampler {
     }
 
     @Override
-    public double[] getSample() {
-        return new double[] {get1dSample(), get1dSample()};
+    public Sample getSample() {
+        return new Sample(get1dSample(), get1dSample());
     }
 
     @Override
-    public void finishThisPath() {
+    public void reset() {
     }
 }

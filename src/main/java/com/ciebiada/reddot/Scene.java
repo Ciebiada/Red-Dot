@@ -6,9 +6,11 @@
 package com.ciebiada.reddot;
 
 import com.ciebiada.reddot.camera.Camera;
+import com.ciebiada.reddot.filter.Filter;
 import com.ciebiada.reddot.primitive.BVH;
 import com.ciebiada.reddot.primitive.OBJParser;
 import com.ciebiada.reddot.primitive.Primitive;
+import com.ciebiada.reddot.tracer.Tracer;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,12 +25,10 @@ public class Scene {
 
     public Film film;
     public Camera camera;
-
+    public Filter filter;
     public Primitive bvh;
-
-    public List<Primitive> lights = new ArrayList<Primitive>();
-
-    public List<Trace> threads = new ArrayList<Trace>();
+    public Primitive[] lights;
+    public List<Tracer> threads = new ArrayList<Tracer>();
 
     public Scene(String filename) throws SAXException, ParserConfigurationException, IOException {
         SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -37,17 +37,17 @@ public class Scene {
         SceneHandler handler = new SceneHandler(this);
         saxParser.parse(filename, handler);
 
-        film = new Film(handler.width, handler.height, handler.filter);
-
         File file = new File(filename);
         String dir = file.getParent();
 
         List<Primitive> primitives = OBJParser.parseObj(handler.fileName, dir + "/");
 
-        for (Primitive shape: primitives)
-            if (shape.getMat().isEmissive())
-                lights.add(shape);
+        List<Primitive> lightsList = new ArrayList<Primitive>();
+        for (Primitive primitive : primitives)
+            if (primitive.getMat().isEmissive())
+                lightsList.add(primitive);
 
+        lights = lightsList.toArray(new Primitive[0]);
         bvh = BVH.build(primitives.toArray(new Primitive[0]), 0, primitives.size());
     }
 

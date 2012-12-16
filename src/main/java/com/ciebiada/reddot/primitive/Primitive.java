@@ -7,12 +7,12 @@ package com.ciebiada.reddot.primitive;
 
 import com.ciebiada.reddot.material.Material;
 import com.ciebiada.reddot.math.Ray;
+import com.ciebiada.reddot.math.Sample;
 import com.ciebiada.reddot.math.Vec;
-import com.ciebiada.reddot.sampler.Sampler;
 
 public abstract class Primitive {
 
-    public abstract Vec[] sample(double[] sample);
+    public abstract Vec[] sample(Sample sample);
 
     public abstract boolean hit(Ray ray, HitData hit);
 

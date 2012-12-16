@@ -1,0 +1,7 @@
+<reddot threads="4">
+	<image width="500" height="500">
+		<filter type="triangle" />
+	</image>
+    <camera type="pinhole" eye="0 0 8.037" fov="39.1" lookAt="0 0 0" />
+    <obj filename="cornellbox_icosphere.obj" />
+</reddot>

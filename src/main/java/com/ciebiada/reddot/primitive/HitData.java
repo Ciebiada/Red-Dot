@@ -11,9 +11,10 @@ import com.ciebiada.reddot.math.Vec;
 public final class HitData {
 
     public double t, cosI;
-    public Vec point;
+    public Vec pos;
     public Primitive primitive;
     public OBasis basis;
+    public Vec nors, norg;
 
     public HitData() {
         t = Double.POSITIVE_INFINITY;

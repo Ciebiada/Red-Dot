@@ -10,6 +10,7 @@ import com.ciebiada.reddot.math.Vec;
 public final class SmoothTriangle extends Triangle {
 
     private final int a, b, c;
+    private final Vec nor;
     private final double area;
 
     public SmoothTriangle(int a, int b, int c, Mesh mesh) {
@@ -18,6 +19,8 @@ public final class SmoothTriangle extends Triangle {
         this.a = a;
         this.b = b;
         this.c = c;
+
+        nor = getP1().sub(getP0()).cross(getP2().sub(getP0())).norm();
 
         area = getP0().cross(getP1()).add(getP1().cross(getP2())).add(getP2().cross(getP0())).length() / 2;
     }
@@ -40,6 +43,11 @@ public final class SmoothTriangle extends Triangle {
     @Override
     public Vec getNormal(double beta, double gamma) {
         return getN0().add(getN1().sub(getN0()).mul(beta)).add(getN2().sub(getN0()).mul(gamma));
+    }
+
+    @Override
+    public Vec getGeometricNormal() {
+        return nor;
     }
 
     public Vec getN0() {
