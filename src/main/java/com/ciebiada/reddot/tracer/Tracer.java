@@ -50,9 +50,10 @@ public final class Tracer extends Thread {
                 }
             }
 
-            Sampler.shuffle(pixels, random);
 //
         while (true) {
+            Sampler.shuffle(pixels, random);
+
             HitMap hitMap = new HitMap(scene.bvh.getMin(), scene.bvh.getMax(), scene.film.getPixelCount(), 2 * searchRadius);
 
             Sample pixelSample = scene.filter.transform(pixelSampler.getSample());
