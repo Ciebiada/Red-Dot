@@ -74,7 +74,7 @@ public abstract class Triangle extends Primitive {
             hit.cosI = -normal.dot(ray.dir);
             hit.norg = getGeometricNormal();
             hit.nors = getNormal(u, v);
-            hit.basis = new OBasis(hit.nors);
+            hit.basis = new OBasis(hit.norg);
             return true;
         }
 

@@ -11,6 +11,6 @@ public class BoxFilter implements Filter {
 
     @Override
     public Sample transform(Sample sample) {
-        return new Sample(sample.getX() - 0.5, sample.getY() - 0.5);
+        return new Sample(sample.getX() * 2 - 1, sample.getY() * 2 - 1);
     }
 }

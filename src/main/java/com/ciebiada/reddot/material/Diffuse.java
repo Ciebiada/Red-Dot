@@ -19,19 +19,47 @@ public class Diffuse extends Material {
 
     @Override
     public Brdf getBrdf(Ray ray, HitData hit, boolean adjoint, Sampler sampler) {
-        if (adjoint) {
             Vec ns = hit.nors;
             Vec ng = hit.norg;
-            Vec dir = getCosineWeightedDir(hit.basis, sampler.getSample());
 
-            double scale = Math.abs(ray.dir.dot(ns)) / Math.abs(ray.dir.dot(ng));//ng.dot(dir) / -ray.dir.dot(ng);
+            Vec wi = getCosineWeightedDir(hit.basis, sampler.getSample());
 
-            if (dir.dot(ng) * dir.dot(ns) <= 0 || ray.dir.dot(ng) * ray.dir.dot(ns) <= 0)
+            Vec wo = ray.dir.mul(-1);
+
+//            if (wi.dot(ng) * wi.dot(ns) <= 0 || wo.dot(ng) * wo.dot(ns) <= 0)
+//                return new Brdf(false, true);
+
+
+            if (wi.dot(ng) * wi.dot(ns) <= 0 || wo.dot(ng) * wo.dot(ns) <= 0)
                 return new Brdf(true, true);
+//            if (ray.dir.mul(-1).dot(hit.norg) * wo.dot(hit.norg) < 0)
+//                return new Brdf(false, true);
 
-            return new Brdf(diffuse.mul(scale), dir, true);
+        if (wo.dot(ng) * wi.dot(ng) <= 0)
+                return new Brdf(false, true);
+
+
+        if (adjoint) {
+//        double scale = Math.abs(ray.dir.dot(ns)) / Math.abs(ray.dir.dot(ng));
+//            double scale = Math.abs(ns.dot(wi) * ng.dot(wo)) / (ns.dot(wo) * ng.dot(wi));
+//            scale = Math.max(0, scale);
+
+//            double scale = Math.abs(wo.dot(ng)) / Math.abs(wi.dot(ng);//Math.abs(ray.dir.dot(ns)) / Math.abs(ray.dir.dot(ng));//ng.dot(dir) / -ray.dir.dot(ng);
+//            if (wi.dot(ng) <= 1e-2)
+//                return new Brdf(false, true);
+
+            double scale = Math.abs(wo.dot(ns)) / Math.abs(wo.dot(ng));
+            if (wo.dot(ng) < 0.01 || wo.dot(ns) < 0.01)
+                scale = 0;
+
+            if (wo.dot(ng) > 10 || wo.dot(ns) > 10)
+                scale = 1;
+//            if (Double.isNaN(scale) || Double.isInfinite(scale))
+//                scale = 0;
+            return new Brdf(diffuse.mul(scale), wi, true);
         } else {
-            return new Brdf(diffuse, getCosineWeightedDir(hit.basis, sampler.getSample()), true);
+            double scale = Math.abs(wi.dot(ns)) / Math.abs(wi.dot(ng));
+            return new Brdf(diffuse.mul(scale), wi, true);
         }
     }
 

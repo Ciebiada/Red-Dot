@@ -19,14 +19,6 @@ public class HitMap {
     private final double cellSizeInv;
     private final Cell[] cells;
 
-    private class Cell {
-        public List<HitPoint> hitPoints = new ArrayList<HitPoint>();
-    }
-
-    private int hash(int ix, int iy, int iz) {
-        return (int) ((((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) & 0xffffffffl) % hashSize);
-    }
-
     public HitMap(Vec min, Vec max, int hashSize, double cellSize) {
         this.min = min;
         this.max = max;
@@ -69,11 +61,19 @@ public class HitMap {
         }
     }
 
+    private int hash(int ix, int iy, int iz) {
+        return (int) ((((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) & 0xffffffffl) % hashSize);
+    }
+
     public void printHitpoints(Film film) {
         for (Cell cell : cells) {
             for (HitPoint hitPoint : cell.hitPoints) {
                 film.store(hitPoint.x, hitPoint.y, hitPoint.r, hitPoint.g, hitPoint.b);
             }
         }
+    }
+
+    private class Cell {
+        public List<HitPoint> hitPoints = new ArrayList<HitPoint>();
     }
 }

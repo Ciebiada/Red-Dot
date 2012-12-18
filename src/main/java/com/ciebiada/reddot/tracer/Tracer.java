@@ -37,7 +37,9 @@ public final class Tracer extends Thread {
 
     @Override
     public void run() {
-        double searchRadius = 0.1;
+        Vec extent = scene.bvh.getMax().sub(scene.bvh.getMin());
+        double searchRadius = ((extent.x + extent.y + extent.z) / 3) /
+                ((scene.film.getWidth() + scene.film.getHeight()) / 2) * 3;
         double alpha = 0.7;
         int iter = 0;
 
@@ -60,8 +62,8 @@ public final class Tracer extends Thread {
             pixelSampler.reset();
 
             for (int i = 0; i < scene.film.getPixelCount(); i++) {
-                double fx = (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
-                double fy = (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
+                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
+                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
 //                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
 //                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
                 Ray ray = scene.camera.getRay(fx, fy, pathSampler);
@@ -83,7 +85,7 @@ public final class Tracer extends Thread {
 //                }
 //            }
 
-            tracePhotons(10000, hitMap, searchRadius, photonSampler);
+            tracePhotons(100000, hitMap, searchRadius, photonSampler);
 
             hitMap.printHitpoints(scene.film);
 
@@ -107,7 +109,7 @@ public final class Tracer extends Thread {
 
             if (brdf.isDiffuse()) {
                 hitMap.add(new HitPoint(x, y, hit.pos, hit.nors, l));
-                break;
+                return;
             }
 
             if (brdf.isAbsorptive())
@@ -124,6 +126,8 @@ public final class Tracer extends Thread {
 
             ray = new Ray(hit.pos, brdf.getDir());
         }
+
+        scene.film.store(x, y, l.r, l.g, l.b);
     }
 
     void tracePhotons(int photonCount, HitMap hitMap, double rad, Sampler sampler) {
@@ -142,7 +146,7 @@ public final class Tracer extends Thread {
                 if (!scene.bvh.hit(particle, hit))
                     break;
 
-                Brdf brdf = hit.primitive.getMat().getBrdf(particle, hit, false, sampler);
+                Brdf brdf = hit.primitive.getMat().getBrdf(particle, hit, true, sampler);
 
                 if (brdf.isAbsorptive())
                     break;

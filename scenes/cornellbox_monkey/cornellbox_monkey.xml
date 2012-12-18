@@ -1,6 +1,6 @@
 <reddot threads="4">
 	<image width="500" height="500">
-		<filter type="box" />
+		<filter type="triangle" />
 		<!--<filter type="mitchell" b="0.333" c="0.333" size="2" />-->
 		<!--<filter type="box" size="1" />-->
 		<!--<filter type="tent" size="1.5" />-->
