@@ -1,4 +1,4 @@
-<reddot threads="8">
+<reddot threads="1">
 	<image width="500" height="500">
 		<filter type="spline" />
 	</image>

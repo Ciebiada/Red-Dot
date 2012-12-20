@@ -13,6 +13,7 @@ import com.ciebiada.reddot.math.*;
 import com.ciebiada.reddot.primitive.HitData;
 import com.ciebiada.reddot.primitive.Primitive;
 import com.ciebiada.reddot.sampler.QMCSampler;
+import com.ciebiada.reddot.sampler.RandomSampler;
 import com.ciebiada.reddot.sampler.Sampler;
 
 import java.util.Random;
@@ -35,6 +36,56 @@ public final class Tracer extends Thread {
 
     }
 
+    private class HitPointsWorker extends Thread {
+        int from, to;
+        Sample pixelSample;
+        Sampler sampler;
+        HitMap hitMap;
+
+        private HitPointsWorker(int from, int to, Sample pixelSample, Sampler sampler, HitMap hitMap) {
+            this.from = from;
+            this.to = to;
+            this.pixelSample = pixelSample;
+            this.sampler = sampler;
+            this.hitMap = hitMap;
+        }
+
+        @Override
+        public void run() {
+            for (int i = from; i < to; i++) {
+                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
+                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
+//                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
+//                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
+                Ray ray = scene.camera.getRay(fx, fy, pathSampler);
+                traceRay(ray, hitMap, pixels[i][0], pixels[i][1], sampler);
+                sampler.reset();
+            }
+        }
+    }
+
+    private class PhotonWorker extends Thread {
+        int howMany;
+        double searchRadius;
+        Sampler sampler;
+        HitMap hitMap;
+
+        private PhotonWorker(int howMany, double searchRadius, Sampler sampler, HitMap hitMap) {
+            this.howMany = howMany;
+            this.searchRadius = searchRadius;
+            this.sampler = sampler;
+            this.hitMap = hitMap;
+        }
+
+        @Override
+        public void run() {
+            tracePhotons(howMany, hitMap, searchRadius, sampler);
+        }
+    }
+
+    Sampler[] samplers = new Sampler[] {new RandomSampler(1), new RandomSampler(2), new RandomSampler(3)};
+    Sampler[] photonSamplers = new Sampler[] {new RandomSampler(1), new RandomSampler(2), new RandomSampler(3)};
+
     @Override
     public void run() {
         Vec extent = scene.bvh.getMax().sub(scene.bvh.getMin());
@@ -52,7 +103,8 @@ public final class Tracer extends Thread {
                 }
             }
 
-//
+        int photonsPerPass = 1000000;
+
         while (true) {
             Sampler.shuffle(pixels, random);
 
@@ -61,15 +113,41 @@ public final class Tracer extends Thread {
             Sample pixelSample = scene.filter.transform(pixelSampler.getSample());
             pixelSampler.reset();
 
-            for (int i = 0; i < scene.film.getPixelCount(); i++) {
-                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
-                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
-//                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
-//                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
-                Ray ray = scene.camera.getRay(fx, fy, pathSampler);
-                traceRay(ray, hitMap, pixels[i][0], pixels[i][1], pathSampler);
-                pathSampler.reset();
+        HitPointsWorker[] hitPointsWorkers = new HitPointsWorker[2];
+        for (int i = 0; i < hitPointsWorkers.length; i++) {
+            hitPointsWorkers[i] = new HitPointsWorker(i * scene.film.getPixelCount() / hitPointsWorkers.length,
+                    (i + 1) * scene.film.getPixelCount() / hitPointsWorkers.length, pixelSample, samplers[i], hitMap);
+            hitPointsWorkers[i].start();
+        }
+
+                try {
+            for (int i = 0; i < hitPointsWorkers.length; i++)
+                    hitPointsWorkers[i].join();
+                } catch (InterruptedException e) {
+                }
+
+
+
+            PhotonWorker[] photonWorkers = new PhotonWorker[2];
+            for (int i = 0; i < photonWorkers.length; i++) {
+                photonWorkers[i] = new PhotonWorker(photonsPerPass / photonWorkers.length, searchRadius, photonSamplers[i], hitMap);
+                photonWorkers[i].start();
             }
+
+            try {
+                for (int i = 0; i < photonWorkers.length; i++)
+                    photonWorkers[i].join();
+            } catch (InterruptedException e) {
+            }
+//            for (int i = 0; i < scene.film.getPixelCount(); i++) {
+//                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
+//                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
+////                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
+////                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
+//                Ray ray = scene.camera.getRay(fx, fy, pathSampler);
+//                traceRay(ray, hitMap, pixels[i][0], pixels[i][1], pathSampler);
+//                pathSampler.reset();
+//            }
 
 // film.getHeight(); y++) {
 //                for (int x = 0; x < scene.film.getWidth(); x++) {
@@ -85,7 +163,7 @@ public final class Tracer extends Thread {
 //                }
 //            }
 
-            tracePhotons(100000, hitMap, searchRadius, photonSampler);
+//            tracePhotons(100000, hitMap, searchRadius, photonSampler);
 
             hitMap.printHitpoints(scene.film);
 
