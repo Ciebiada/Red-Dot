@@ -5,15 +5,15 @@
 
 package com.ciebiada.reddot.math;
 
-public final class Vec {
+public class Vec {
 
-    public final double x, y, z;
+    public float x, y, z;
 
-    public Vec(double val) {
+    public Vec(float val) {
         x = y = z = val;
     }
 
-    public Vec(double x, double y, double z) {
+    public Vec(float x, float y, float z) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -29,15 +29,27 @@ public final class Vec {
         return new Vec(x + v.x, y + v.y, z + v.z);
     }
 
+    public void addSet(Vec v) {
+        x += v.x;
+        y += v.y;
+        z += v.z;
+    }
+
     public Vec sub(Vec v) {
         return new Vec(x - v.x, y - v.y, z - v.z);
+    }
+
+    public void subSet(Vec v) {
+        x -= v.x;
+        y -= v.y;
+        z -= v.z;
     }
 
     public Vec mul(Vec v) {
         return new Vec(x * v.x, y * v.y, z * v.z);
     }
 
-    public Vec mul(double val) {
+    public Vec mul(float val) {
         return new Vec(x * val, y * val, z * val);
     }
 
@@ -45,12 +57,12 @@ public final class Vec {
         return new Vec(x / val.x, y / val.y, z / val.z);
     }
 
-    public Vec div(double val) {
-        val = 1.0f / val;
+    public Vec div(float val) {
+        val = 1 / val;
         return new Vec(x * val, y * val, z * val);
     }
 
-    public double dot(Vec v) {
+    public float dot(Vec v) {
         return x * v.x + y * v.y + z * v.z;
     }
 
@@ -61,8 +73,8 @@ public final class Vec {
                 x * v.y - y * v.x);
     }
 
-    public double get(int i) {
-        switch (i) {
+    public float get(int axis) {
+        switch (axis) {
             case 0:
                 return x;
             case 1:
@@ -72,15 +84,29 @@ public final class Vec {
         }
     }
 
-    public double length() {
-        return Math.sqrt(x * x + y * y + z * z);
+    public float length() {
+        return (float) Math.sqrt(x * x + y * y + z * z);
     }
 
     public Vec norm() {
-        double f = 1 / Math.sqrt(x * x + y * y + z * z);
-        return new Vec(x * f, y * f, z * f);
+        float lengthInv = 1 / (float) Math.sqrt(x * x + y * y + z * z);
+        return new Vec(x * lengthInv, y * lengthInv, z * lengthInv);
     }
 
+    public void set(int axis, float val) {
+        switch (axis) {
+            case 0:
+                x = val;
+                break;
+            case 1:
+                y = val;
+                break;
+            default:
+                z = val;
+        }
+    }
+
+    @Override
     public String toString() {
         return "(" + x + ", " + y + ", " + z + ")";
     }

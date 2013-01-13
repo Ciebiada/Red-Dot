@@ -3,7 +3,7 @@
  * This is not open source. Redistribution in any form is forbidden.
  */
 
-package com.ciebiada.reddot.primitive;
+package com.ciebiada.reddot.geometry;
 
 import com.ciebiada.reddot.material.Diffuse;
 import com.ciebiada.reddot.material.Light;
@@ -16,13 +16,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 public class OBJParser {
 
-    public static List<Primitive> parseObj(String filename, String dir) {
-        List<Primitive> list = new LinkedList<Primitive>();
+    public static List<TriangleRaw> parseObj(String filename, String dir) {
+        List<TriangleRaw> list = new ArrayList<TriangleRaw>();
 
         try {
             BufferedReader in = new BufferedReader(new FileReader(dir + filename));
@@ -36,7 +35,6 @@ public class OBJParser {
             boolean finishedVerts = false;
             String line;
             boolean smooth = false;
-            Mesh mesh = null;
             while ((line = in.readLine()) != null) {
                 String[] tokens = line.split(" ");
                 if (tokens[0].equals("mtllib")) {
@@ -46,10 +44,10 @@ public class OBJParser {
                         verts.clear();
                         finishedVerts = false;
                     }
-                    verts.add(new Vec(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3])));
+                    verts.add(new Vec(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3])));
                     ++vertCount;
                 } else if (tokens[0].equals("vn")) {
-                    norms.add(new Vec(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3])));
+                    norms.add(new Vec(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3])));
                 } else if (tokens[0].equals("usemtl")) {
                     mat = mtl.get(tokens[1]);
                 } else if (tokens[0].equals("s")) {
@@ -63,7 +61,6 @@ public class OBJParser {
                         if (smooth)
                             normsLocal = new Vec[verts.size()];
 
-                        mesh = new Mesh(verts.toArray(new Vec[0]), normsLocal, mat);
                         finishedVerts = true;
                     }
 
@@ -84,10 +81,7 @@ public class OBJParser {
                         if (normsLocal[p2idx] == null) normsLocal[p2idx] = norms.get(n2idx);
                     }
 
-                    if (smooth)
-                        list.add(new SmoothTriangle(p0idx, p1idx, p2idx, mesh));
-                    else
-                        list.add(new SolidTriangle(p0idx, p1idx, p2idx, mesh));
+                    list.add(new TriangleRaw(verts.get(p0idx), verts.get(p1idx), verts.get(p2idx), mat));
                 }
             }
         } catch (Exception e) {
@@ -118,9 +112,9 @@ public class OBJParser {
                 } else if (tokens[0].equals("Ns")) {
                     ns = (int) Math.floor(Double.valueOf(tokens[1]));
                 } else if (tokens[0].equals("Kd")) {
-                    diffuse = new Col(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3]));
+                    diffuse = new Col(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3]));
                 } else if (tokens[0].equals("Ks")) {
-                    specular = new Col(Double.valueOf(tokens[1]), Double.valueOf(tokens[2]), Double.valueOf(tokens[3]));
+                    specular = new Col(Float.valueOf(tokens[1]), Float.valueOf(tokens[2]), Float.valueOf(tokens[3]));
                 } else if (tokens[0].equals("d")) {
                     double d = Double.valueOf(tokens[1]);
                     ior = d + 1.0f;

@@ -7,18 +7,10 @@ package com.ciebiada.reddot.math;
 
 public class Sample {
 
-    private final double x, y;
+    public float x, y;
 
-    public Sample(double x, double y) {
+    public Sample(float x, float y) {
         this.x = x;
         this.y = y;
-    }
-
-    public double getX() {
-        return x;
-    }
-
-    public double getY() {
-        return y;
     }
 }

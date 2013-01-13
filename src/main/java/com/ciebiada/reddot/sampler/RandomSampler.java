@@ -9,17 +9,17 @@ import com.ciebiada.reddot.math.Sample;
 
 import java.util.Random;
 
-public class RandomSampler extends Sampler {
+public class RandomSampler implements Sampler {
 
-    private final Random random;
+    private Random random;
 
     public RandomSampler(int seed) {
         random = new Random(seed);
     }
 
     @Override
-    public double get1dSample() {
-        return random.nextDouble();
+    public float get1dSample() {
+        return random.nextFloat();
     }
 
     @Override

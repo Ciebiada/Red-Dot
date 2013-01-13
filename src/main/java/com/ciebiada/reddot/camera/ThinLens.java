@@ -11,36 +11,38 @@ import com.ciebiada.reddot.math.Sample;
 import com.ciebiada.reddot.math.Vec;
 import com.ciebiada.reddot.sampler.Sampler;
 
-public final class ThinLens extends Camera {
+public class ThinLens implements Camera {
 
-	private final Vec eye;
-	private final Vec corner;
-	private final Vec toTop, toRight;
+	private Vec eye;
+	private Vec corner;
+	private Vec toTop, toRight;
 
-    private final OBasis ob;
+    private OBasis basis;
 
-    private final double lensSize;
+    private float lensSize;
 
-	public ThinLens(Vec eye, Vec gaze, double fov, double ratio, double lensSize, double dist) {
+	public ThinLens(Vec eye, Vec gaze, float fov, float ratio, float lensSize, float dist) {
 		this.eye = eye;
         this.lensSize = lensSize;
 
-		double filmWidth = Math.tan(Math.toRadians(fov / 2)) * dist * 2;
-		double filmHeight = filmWidth * ratio;
+		float filmWidth = (float) Math.tan(Math.toRadians(fov / 2)) * dist * 2;
+		float filmHeight = filmWidth * ratio;
 
-        ob = new OBasis(gaze);
+        basis = new OBasis(gaze);
 
-		corner = eye.add(gaze.mul(dist)).sub(ob.getU().mul(filmWidth / 2)).sub(ob.getV().mul(filmHeight / 2));
-		toTop = ob.getV().mul(filmHeight);
-		toRight = ob.getU().mul(filmWidth);
+		corner = eye.add(gaze.mul(dist)).sub(basis.u.mul(filmWidth / 2)).sub(basis.v.mul(filmHeight / 2));
+		toTop = basis.v.mul(filmHeight);
+		toRight = basis.u.mul(filmWidth);
 	}
-	
-	public Ray getRay(double x, double y, Sampler sampler) {
-        Sample sample = sampler.getSample();
-		Vec onPlane = corner.add(toRight.mul(x)).add(toTop.mul(y));
-        double lx = lensSize * (sample.getX() - 0.5f);
-        double ly = lensSize * (sample.getY() - 0.5f);
-        Vec orig = eye.add(ob.getV().mul(ly)).add(ob.getU().mul(lx));
+
+    @Override
+	public Ray createRay(Sample sample, Sampler sampler) {
+        Sample lensSample = sampler.getSample();
+
+		Vec onPlane = corner.add(toRight.mul(sample.x)).add(toTop.mul(sample.y));
+        float lx = lensSize * (lensSample.x - 0.5f);
+        float ly = lensSize * (lensSample.y - 0.5f);
+        Vec orig = eye.add(basis.v.mul(ly)).add(basis.u.mul(lx));
 
 		return new Ray(orig, onPlane.sub(orig).norm());
 	}

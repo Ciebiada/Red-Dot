@@ -7,7 +7,7 @@ package com.ciebiada.reddot.math;
 
 public class OBasis {
 
-    private final Vec u, v, w;
+    public Vec u, v, w;
 
     public OBasis(Vec w) {
         this.w = w;
@@ -23,19 +23,7 @@ public class OBasis {
         }
     }
 
-    public Vec getV() {
-        return v;
-    }
-
-    public Vec getU() {
-        return u;
-    }
-
-    public Vec getW() {
-        return w;
-    }
-
-    public Vec transform(double x, double y, double z) {
+    public Vec transform(float x, float y, float z) {
         return u.mul(x).add(v.mul(y)).add(w.mul(z));
     }
 

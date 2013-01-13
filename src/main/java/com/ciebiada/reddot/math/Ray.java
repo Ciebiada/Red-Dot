@@ -5,27 +5,37 @@
 
 package com.ciebiada.reddot.math;
 
-import com.ciebiada.reddot.primitive.Primitive;
+import com.ciebiada.reddot.geometry.Triangle;
 
 public class Ray {
 
-    public final Vec orig, dir;
+    public Vec orig, dir;
 
-    /**
-     * intersection optimizations
-     */
-    public final Vec dirInv;
-    public final int[] sign;
+    public float dirxInv, diryInv, dirzInv;
+
+    public float tmin, tmax;
+    public Vec nor;
+    public Triangle tri;
 
     public Ray(Vec orig, Vec dir) {
         this.orig = orig;
         this.dir = dir;
+        tmin = 1e-5f;
+        tmax = Float.POSITIVE_INFINITY;
 
-        dirInv = new Vec(1 / dir.x, 1 / dir.y, 1 / dir.z);
-        sign = new int[]{
-                (dirInv.x < 0) ? 1 : 0,
-                (dirInv.y < 0) ? 1 : 0,
-                (dirInv.z < 0) ? 1 : 0
-        };
+        dirxInv = 1 / dir.x;
+        diryInv = 1 / dir.y;
+        dirzInv = 1 / dir.z;
+    }
+
+    public void set(Vec orig, Vec dir) {
+        this.orig = orig;
+        this.dir = dir;
+        tmin = 1e-5f;
+        tmax = Float.POSITIVE_INFINITY;
+
+        dirxInv = 1 / dir.x;
+        diryInv = 1 / dir.y;
+        dirzInv = 1 / dir.z;
     }
 }

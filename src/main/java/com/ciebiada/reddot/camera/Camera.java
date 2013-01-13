@@ -6,10 +6,10 @@
 package com.ciebiada.reddot.camera;
 
 import com.ciebiada.reddot.math.Ray;
-import com.ciebiada.reddot.math.Vec;
+import com.ciebiada.reddot.math.Sample;
 import com.ciebiada.reddot.sampler.Sampler;
 
-public abstract class Camera {
+public interface Camera {
 
-	public abstract Ray getRay(double x, double y, Sampler sampler);
+	Ray createRay(Sample sample, Sampler sampler);
 }

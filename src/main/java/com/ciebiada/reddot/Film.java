@@ -5,90 +5,100 @@
 
 package com.ciebiada.reddot;
 
+import com.ciebiada.reddot.filter.Filter;
 import com.ciebiada.reddot.math.Col;
-import com.ciebiada.reddot.math.Utils;
+import com.ciebiada.reddot.math.Sample;
 
 import java.awt.image.BufferedImage;
 
 public class Film {
 
-    private final int width, height;
-    private final int pixelCount;
+    public int width, height;
+    public int pixelCount;
 
-    private final double[] rgb;
+    private Filter filter;
 
-    private final double[] weights;
-    private final BufferedImage bi;
+    private Col[] pixels;
+    private float[] weights;
 
-    public Film(int width, int height) {
+    public Film(int width, int height, Filter filter) {
         this.width = width;
         this.height = height;
+
         pixelCount = width * height;
 
-        rgb = new double[width * height * 3];
-        weights = new double[width * height];
+        this.filter = filter;
 
-        bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        pixels = new Col[pixelCount];
+        weights = new float[pixelCount];
+        for (int i = 0; i < pixelCount; i++) {
+            pixels[i] = new Col(0);
+        }
     }
 
-    public int getWidth() {
-        return width;
-    }
+    public void store(Sample cameraSample, Col col) {
+        float sx = cameraSample.x * width;
+        float sy = cameraSample.y * height;
 
-    public int getHeight() {
-        return height;
-    }
+        int x1 = Math.max(0, (int) (sx - filter.getSize()));
+        int y1 = Math.max(0, (int) (sy - filter.getSize()));
 
-    public int getPixelCount() {
-        return pixelCount;
-    }
+        int x2 = Math.min(width - 1, (int) (sx + filter.getSize()) + 1);
+        int y2 = Math.min(height - 1, (int) (sy + filter.getSize()) + 1);
 
-    public void store(int x, int y, double r, double g, double b) {
-        int idx = y * width + x;
-
-        rgb[3 * idx] += r;
-        rgb[3 * idx + 1] += g;
-        rgb[3 * idx + 2] += b;
-
-        weights[idx]++;
-    }
-
-    private Col getPixel(int i) {
-        double weight = weights[i];
-        if (weight == 0)
-            weight = 1;
-        return new Col(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]).div(weight);
+        for (int x = x1; x <= x2; x++) {
+            for (int y = y1; y <= y2; y++) {
+                float weight = filter.fun((x + 0.5f) - sx, (y + 0.5f) - sy);
+                int idx = y * width + x;
+                pixels[idx].addSet(col.mul(weight));
+                weights[idx] += weight;
+            }
+        }
     }
 
     public BufferedImage getImage() {
-        double logsum = 0;
-        double l2white = 0;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        for (int i = 0; i < pixelCount; i++) {
-            Col pix = getPixel(i);
-            double lum = pix.lum();
-            logsum += Math.log(lum + Utils.EPS);
-            if (lum > l2white)
-                l2white = lum;
-        }
+        float radius = Math.max(width, height) * 0.01f;
+        float mix = 0.1f;
 
-        double key = Math.exp(logsum / pixelCount);
-        l2white *= l2white;
+        Col[] bloom = new Col[pixelCount];
 
-        double a = 0.18f;
-
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 int idx = y * width + x;
-                Col pix = getPixel(idx);
-                double lum = pix.lum();
-                double l = a / key * lum;
-                double ld = (l * (1 + l / l2white)) / (1 + l);
-                bi.setRGB(x, height - 1 - y, pix.mul(ld / lum).toInt());
-//                bi.setRGB(x, height - 1 - y, pix.toInt());
+
+                int x1 = Math.max((int) Math.floor(x - radius), 0);
+                int y1 = Math.max((int) Math.floor(y - radius), 0);
+                int x2 = Math.min((int) Math.ceil(x + radius), width - 1);
+                int y2 = Math.min((int) Math.ceil(y + radius), height - 1);
+
+                Col sum = new Col(0);
+
+                for (int fx = x1; fx <= x2; fx++) {
+                    for (int fy = y1; fy <= y2; fy++) {
+                        int dx = x - fx;
+                        int dy = y - fy;
+                        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= radius) {
+                            int idx2 = fy * width + fx;
+                            sum.addSet(pixels[idx2].div(weights[idx2]));
+                        }
+                    }
+                }
+
+                bloom[idx] = sum.div((float) Math.PI * radius * radius);
             }
         }
 
-        return bi;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int idx = y * width + x;
+                Col c = bloom[idx].mul(mix).add(pixels[idx].div(weights[idx]).mul(1 - mix));
+                image.setRGB(x, height - y - 1, c.toInt());
+            }
+        }
+
+        return image;
     }
 }

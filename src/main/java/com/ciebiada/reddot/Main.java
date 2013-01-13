@@ -5,6 +5,7 @@
 
 package com.ciebiada.reddot;
 
+import com.ciebiada.reddot.tracer.Tracer;
 import org.xml.sax.SAXException;
 
 import javax.imageio.ImageIO;
@@ -21,14 +22,12 @@ import java.util.Date;
 
 public class Main {
 
-	private JFrame frame;
-	private JLabel label;
+    private JFrame frame;
+    private JLabel label;
     private JScrollPane scrollPane;
     private Timer timer;
     private JPanel statusBar;
     private JLabel status;
-    private long timestamp = System.currentTimeMillis();
-    private long samplestamp;
     private String pathToSave;
     private Scene scene;
 
@@ -41,12 +40,12 @@ public class Main {
         scene = new Scene(pathToOpen);
         setupThePathToSave(pathToOpen);
 
-		setupTheWindow();
+        setupTheWindow();
         updateImage();
         frame.pack();
         setupTimer();
 
-        scene.render();
+        new Tracer(scene, scene.threadCount).start();
     }
 
     private void setupThePathToSave(String pathToOpen) {
@@ -85,28 +84,26 @@ public class Main {
 
         frame.getContentPane().add(scrollPane);
         frame.getContentPane().add(statusBar, BorderLayout.SOUTH);
-    }    private void updateStatus() {
-        long time = System.currentTimeMillis();
-        long samples = 0;//scene.film.getSamples();
-
-        long elapsedTime = (time - timestamp) / 1000;
-        status.setText("Samples per second: " + ((samples - samplestamp) / elapsedTime));
-
-        timestamp = time;
-        samplestamp = samples;
     }
 
-	public static void main(final String[] args) {
+    private void updateStatus() {
+        long time = System.currentTimeMillis();
+        long passes = 1;
+
+        status.setText("Passes: " + passes);
+    }
+
+    public static void main(final String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Main window = new Main(args[0]);
-					window.frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+            public void run() {
+                try {
+                    Main window = new Main(args[0]);
+                    window.frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void updateImage() {
@@ -119,8 +116,6 @@ public class Main {
             System.out.println("Unable to save the file output.png");
         }
     }
-
-
 
 
 }

@@ -1,16 +1,13 @@
-/*
- * Copyright (c) 2012, by Michal Ciebiada
- * This is not open source. Redistribution in any form is forbidden.
- */
-
 package com.ciebiada.reddot.filter;
 
-import com.ciebiada.reddot.math.Sample;
+public class BoxFilter extends Filter {
 
-public class BoxFilter implements Filter {
+    public BoxFilter(float size) {
+        super(size);
+    }
 
     @Override
-    public Sample transform(Sample sample) {
-        return new Sample(sample.getX() * 2 - 1, sample.getY() * 2 - 1);
+    public float fun(float x, float y) {
+        return 1;
     }
 }

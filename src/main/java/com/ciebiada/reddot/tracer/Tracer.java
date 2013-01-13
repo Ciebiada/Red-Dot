@@ -5,247 +5,220 @@
 
 package com.ciebiada.reddot.tracer;
 
-
 import com.ciebiada.reddot.Scene;
+import com.ciebiada.reddot.geometry.StackElem;
+import com.ciebiada.reddot.geometry.TriangleRaw;
 import com.ciebiada.reddot.material.Brdf;
-import com.ciebiada.reddot.material.Diffuse;
-import com.ciebiada.reddot.math.*;
-import com.ciebiada.reddot.primitive.HitData;
-import com.ciebiada.reddot.primitive.Primitive;
-import com.ciebiada.reddot.sampler.QMCSampler;
-import com.ciebiada.reddot.sampler.RandomSampler;
+import com.ciebiada.reddot.material.Material;
+import com.ciebiada.reddot.math.Col;
+import com.ciebiada.reddot.math.Ray;
+import com.ciebiada.reddot.math.Sample;
+import com.ciebiada.reddot.math.Vec;
+import com.ciebiada.reddot.sampler.HaltonSampler;
 import com.ciebiada.reddot.sampler.Sampler;
 
 import java.util.Random;
 
-public final class Tracer extends Thread {
+public class Tracer extends Thread {
 
     private Scene scene;
-    private Sampler pixelSampler, pathSampler, photonSampler;
-    private Random random;
-    private int[][] pixels;
+    private int pixelIter;
+    private int threadCount;
 
-    public Tracer(Scene scene, int seed) {
+    public Tracer(Scene scene, int threadCount) {
         this.scene = scene;
-
-        pixelSampler = new QMCSampler(seed);
-        pathSampler = new QMCSampler(seed);
-        photonSampler = new QMCSampler(seed);
-
-        random = new Random(seed);
-
+        this.threadCount = threadCount;
     }
-
-    private class HitPointsWorker extends Thread {
-        int from, to;
-        Sample pixelSample;
-        Sampler sampler;
-        HitMap hitMap;
-
-        private HitPointsWorker(int from, int to, Sample pixelSample, Sampler sampler, HitMap hitMap) {
-            this.from = from;
-            this.to = to;
-            this.pixelSample = pixelSample;
-            this.sampler = sampler;
-            this.hitMap = hitMap;
-        }
-
-        @Override
-        public void run() {
-            for (int i = from; i < to; i++) {
-                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
-                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
-//                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
-//                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
-                Ray ray = scene.camera.getRay(fx, fy, pathSampler);
-                traceRay(ray, hitMap, pixels[i][0], pixels[i][1], sampler);
-                sampler.reset();
-            }
-        }
-    }
-
-    private class PhotonWorker extends Thread {
-        int howMany;
-        double searchRadius;
-        Sampler sampler;
-        HitMap hitMap;
-
-        private PhotonWorker(int howMany, double searchRadius, Sampler sampler, HitMap hitMap) {
-            this.howMany = howMany;
-            this.searchRadius = searchRadius;
-            this.sampler = sampler;
-            this.hitMap = hitMap;
-        }
-
-        @Override
-        public void run() {
-            tracePhotons(howMany, hitMap, searchRadius, sampler);
-        }
-    }
-
-    Sampler[] samplers = new Sampler[] {new RandomSampler(1), new RandomSampler(2), new RandomSampler(3)};
-    Sampler[] photonSamplers = new Sampler[] {new RandomSampler(1), new RandomSampler(2), new RandomSampler(3)};
 
     @Override
     public void run() {
-        Vec extent = scene.bvh.getMax().sub(scene.bvh.getMin());
-        double searchRadius = ((extent.x + extent.y + extent.z) / 3) /
-                ((scene.film.getWidth() + scene.film.getHeight()) / 2) * 3;
-        double alpha = 0.7;
-        int iter = 0;
-
-        pixels = new int[scene.film.getPixelCount()][2];
-
-            int pixel = 0;
-            for (int y = 0; y < scene.film.getHeight(); y++) {
-                for (int x = 0; x < scene.film.getWidth(); x++) {
-                    pixels[pixel++] = new int[] {x, y};
-                }
-            }
-
-        int photonsPerPass = 1000000;
-
-        while (true) {
-            Sampler.shuffle(pixels, random);
-
-            HitMap hitMap = new HitMap(scene.bvh.getMin(), scene.bvh.getMax(), scene.film.getPixelCount(), 2 * searchRadius);
-
-            Sample pixelSample = scene.filter.transform(pixelSampler.getSample());
-            pixelSampler.reset();
-
-        HitPointsWorker[] hitPointsWorkers = new HitPointsWorker[2];
-        for (int i = 0; i < hitPointsWorkers.length; i++) {
-            hitPointsWorkers[i] = new HitPointsWorker(i * scene.film.getPixelCount() / hitPointsWorkers.length,
-                    (i + 1) * scene.film.getPixelCount() / hitPointsWorkers.length, pixelSample, samplers[i], hitMap);
-            hitPointsWorkers[i].start();
+        Sampler[] samplers = new Sampler[threadCount];
+        Random random = new Random();
+        for (int i = 0; i < threadCount; i++) {
+            samplers[i] = new HaltonSampler(random.nextInt());
         }
 
+        Thread[] threads = new Thread[threadCount];
+
+        int passes = 0;
+
+        long start = System.currentTimeMillis();
+
+        for (;;) {
+            for (int i = 0; i < threadCount; i++) {
+                threads[i] = new RenderPixel(samplers[i], scene.film.pixelCount);
+                threads[i].start();
+            }
+
+            for (Thread thread: threads) {
                 try {
-            for (int i = 0; i < hitPointsWorkers.length; i++)
-                    hitPointsWorkers[i].join();
+                    thread.join();
                 } catch (InterruptedException e) {
                 }
-
-
-
-            PhotonWorker[] photonWorkers = new PhotonWorker[2];
-            for (int i = 0; i < photonWorkers.length; i++) {
-                photonWorkers[i] = new PhotonWorker(photonsPerPass / photonWorkers.length, searchRadius, photonSamplers[i], hitMap);
-                photonWorkers[i].start();
             }
 
-            try {
-                for (int i = 0; i < photonWorkers.length; i++)
-                    photonWorkers[i].join();
-            } catch (InterruptedException e) {
+            pixelIter = 0;
+
+            passes++;
+
+            if (passes == 32) {
+                System.out.println(passes + " passes took: "
+                        + (System.currentTimeMillis() - start) / 1000.0 + " sec");
             }
-//            for (int i = 0; i < scene.film.getPixelCount(); i++) {
-//                double fx = (double) (pixels[i][0] + 0.5 + pixelSample.getX()) / scene.film.getWidth();
-//                double fy = (double) (pixels[i][1] + 0.5 + pixelSample.getY()) / scene.film.getHeight();
-////                pixels[i][0] = (int) (pixels[i][0] + 0.5 + pixelSample[0]);
-////                pixels[i][1] = (int) (pixels[i][1] + 0.5 + pixelSample[1]);
-//                Ray ray = scene.camera.getRay(fx, fy, pathSampler);
-//                traceRay(ray, hitMap, pixels[i][0], pixels[i][1], pathSampler);
-//                pathSampler.reset();
-//            }
-
-// film.getHeight(); y++) {
-//                for (int x = 0; x < scene.film.getWidth(); x++) {
-////                    double a = (x + 0.5 + pixelSample[0]) / scene.film.getWidth();
-////                    double b = (y + 0.5 + pixelSample[0]) / scene.film.getWidth();
-//                    double a = (x + 0.5) / scene.film.getWidth();
-//                    double b = (y + 0.5) / scene.film.getHeight();
-////                    pathSampler.getSample();
-////                    pathSampler.getSample();
-//                    Ray ray = scene.camera.getRay(a, b, pathSampler);
-//                    traceRay(ray, hitMap, x, y, pathSampler);
-//                    pathSampler.reset();
-//                }
-//            }
-
-//            tracePhotons(100000, hitMap, searchRadius, photonSampler);
-
-            hitMap.printHitpoints(scene.film);
-
-            searchRadius *= Math.sqrt((iter + alpha) / (iter + 1));
-            iter++;
         }
     }
 
-    private void traceRay(Ray ray, HitMap hitMap, int x, int y, Sampler sampler) {
-        Col w = new Col(1);
-        Col l = new Col(0);
+    private class RenderPixel extends Thread {
 
-        for (int depth = 0; depth < 10; depth++) {
-            HitData hit = new HitData();
-            if (!scene.bvh.hit(ray, hit))
-                break;
+        private Sampler sampler;
+        private int pixelCount;
+        private StackElem[] stack;
 
-            l = l.add(w.mul(hit.primitive.getMat().getEmittance()));
+        public RenderPixel(Sampler sampler, int pixelCount) {
+            this.sampler = sampler;
+            this.pixelCount = pixelCount;
 
-            Brdf brdf = hit.primitive.getMat().getBrdf(ray, hit, false, sampler);
+            stack = new StackElem[30];
+            for (int i = 0; i < stack.length; i++)
+                stack[i] = new StackElem();
+        }
 
-            if (brdf.isDiffuse()) {
-                hitMap.add(new HitPoint(x, y, hit.pos, hit.nors, l));
-                return;
-            }
-
-            if (brdf.isAbsorptive())
-                break;
-
-            w = w.mul(brdf.getScale());
-
-            if (depth > 0) {
-                double sp = 0.8;
-                if (sampler.get1dSample() > sp)
+        @Override
+        public void run() {
+            for (;;) {
+                if (pixelIter >= pixelCount)
                     break;
-                w.div(sp);
-            }
+                pixelIter++;
 
-            ray = new Ray(hit.pos, brdf.getDir());
+                Sample cameraSample = sampler.getSample();
+
+                Ray ray = scene.camera.createRay(cameraSample, sampler);
+
+                scene.film.store(cameraSample, traceRay(ray));
+
+                sampler.reset();
+            }
         }
 
-        scene.film.store(x, y, l.r, l.g, l.b);
-    }
-
-    void tracePhotons(int photonCount, HitMap hitMap, double rad, Sampler sampler) {
-        for (int i = 0; i < photonCount; i++) {
-            Primitive light = scene.lights[(int) (sampler.get1dSample() * scene.lights.length)];
-            Vec[] sample = light.sample(sampler.getSample());
-
-            Vec out = Diffuse.getCosineWeightedDir(new OBasis(sample[1]), sampler.getSample());
-            Ray particle = new Ray(sample[0], out);
-
-            double norm = Math.PI * scene.lights.length * light.getArea();
-            Col flux = light.getMat().getEmittance().mul(norm);
+        private Col traceRay(Ray ray) {
+            Col radiance = new Col(0);
+            Col weight = new Col(1);
 
             for (int depth = 0; depth < 10; depth++) {
-                HitData hit = new HitData();
-                if (!scene.bvh.hit(particle, hit))
+                if (depth > 2) {
+                    float sp = Math.max(weight.r, Math.max(weight.g, weight.b));
+                    if (sampler.get1dSample() > sp || sp == 0)
+                        break;
+                    weight.divSet(sp);
+                }
+
+                if (!scene.kdtree.rayIntersection(ray, stack))
                     break;
 
-                Brdf brdf = hit.primitive.getMat().getBrdf(particle, hit, true, sampler);
+                Material mat = ray.tri.getMat();
+
+                if (depth == 0)
+                    radiance.addSet(mat.getEmittance().mul(weight));
+
+                Brdf brdf = mat.getBrdf(ray, sampler);
 
                 if (brdf.isAbsorptive())
                     break;
 
-                flux = flux.mul(brdf.getScale());
+                weight.mulSet(brdf.scale);
 
-                if (brdf.isDiffuse()) {
-                    hitMap.addRadiance(hit.pos, hit.nors, flux.div(photonCount), rad);
-                }
+                Vec ip = ray.orig.add(ray.dir.mul(ray.tmax)).add(ray.nor.mul(1e-5f));
 
-//                if (depth > 0) {
-                double sp = 0.8;
-                if (sampler.get1dSample() > sp)
-                    continue;
-                flux.div(sp);
-//                }
+                radiance.addSet(weight.mul(sampleLights(ray, ip)));
 
-                particle = new Ray(hit.pos, brdf.getDir());
+                ray.set(ip, brdf.dir);
             }
 
-            sampler.reset();
+            return radiance;
         }
+
+        private Col sampleLights(Ray ray, Vec ip) {
+            float[] weights = new float[scene.lights.length];
+
+            Sample sample = sampler.getSample();
+
+            float weightsSum = 0;
+            for (int i = 0; i < weights.length; i++) {
+                float w = estimateLight(scene.lights[i], sample, ray, ip);
+                weights[i] = w;
+                weightsSum += w;
+            }
+
+            if (weightsSum <= 1e-5f)
+                return new Col(0);
+
+            for (int i = 0; i < weights.length; i++) {
+                weights[i] /= weightsSum;
+            }
+
+            int pick = -1;
+            float p = 0;
+            float sample1d = sampler.get1dSample();
+            for (int i = 0; i < weights.length; i++) {
+                if (sample1d < p + weights[i]) {
+                    pick = i;
+                    break;
+                }
+                p += weights[i];
+            }
+
+            if (pick == -1)
+                return new Col(0);
+
+            TriangleRaw light = scene.lights[pick];
+
+            float pdf = weights[pick];
+            return sampleLight(light, sample, pdf, ray, ip);
+        }
+
+        private Col sampleLight(TriangleRaw light, Sample sample, float pdf, Ray ray, Vec ip) {
+            Vec[] lightSample = light.sample(sample);
+            Vec toLight = lightSample[0].sub(ip);
+            float dist2 = toLight.dot(toLight);
+            float dist = (float) Math.sqrt(dist2);
+            toLight = toLight.div(dist);
+            Ray shadowRay = new Ray(ip, toLight);
+            shadowRay.tmax = dist - 1e-5f;
+
+            if (scene.kdtree.shadowRayIntersection(shadowRay, stack))
+                return new Col(0);
+
+            float cos1 = toLight.dot(ray.nor);
+            float cos2 = -toLight.dot(lightSample[1]);
+
+            if (cos1 > 0.0f && cos2 > 0.0f) {
+                float g = cos1 * cos2 / dist2;
+                float lightPdf = 1 / light.getArea();
+                return light.getMat().getEmittance().mul(g / lightPdf / pdf / (float) Math.PI);
+            } else {
+                return new Col(0);
+            }
+        }
+
+        private float estimateLight(TriangleRaw light, Sample sample, Ray ray, Vec ip) {
+            Vec[] lightSample = light.sample(sample);
+            Vec toLight = lightSample[0].sub(ip);
+            float dist2 = toLight.dot(toLight);
+            float dist = (float) Math.sqrt(dist2);
+            toLight = toLight.div(dist);
+
+            float cos1 = toLight.dot(ray.nor);
+            float cos2 = -toLight.dot(lightSample[1]);
+
+            if (cos1 > 0.0f && cos2 > 0.0f) {
+                float g = cos1 * cos2 / dist2;
+                float lightPdf = 1 / light.getArea();
+
+                return g / lightPdf * scene.lights.length;
+            } else {
+                return 0;
+            }
+        }
+
     }
 }

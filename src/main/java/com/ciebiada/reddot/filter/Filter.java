@@ -5,9 +5,17 @@
 
 package com.ciebiada.reddot.filter;
 
-import com.ciebiada.reddot.math.Sample;
+public abstract class Filter {
 
-public interface Filter {
+    protected float size;
 
-    Sample transform(Sample sample);
+    protected Filter(float size) {
+        this.size = size;
+    }
+
+    public float getSize() {
+        return size;
+    }
+
+    public abstract float fun(float x, float y);
 }

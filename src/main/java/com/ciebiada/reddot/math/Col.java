@@ -5,18 +5,15 @@
 
 package com.ciebiada.reddot.math;
 
-public final class Col {
+public class Col {
 
-    public final static Col BLACK = new Col(0);
-    public final static Col WHITE = new Col(1);
+	public float r, g, b;
 
-	public final double r, g, b;
-
-    public Col(double val) {
+    public Col(float val) {
         r = g = b = val;
     }
 
-	public Col(double r, double g, double b) {
+	public Col(float r, float g, float b) {
 		this.r = r;
 		this.g = g;
 		this.b = b;
@@ -29,19 +26,44 @@ public final class Col {
 	public Col sub(Col c) {
 		return new Col(r - c.r, g - c.g, b - c.b);
 	}
-	
-	public Col mul(double val) {
+
+    public Col mul(Col c) {
+        return new Col(r * c.r, g * c.g, b * c.b);
+    }
+
+	public Col mul(float val) {
 		return new Col(r * val, g * val, b * val);
-	}
-	
-	public Col mul(Col c) {
-		return new Col(r * c.r, g * c.g, b * c.b);
 	}
 
-	public Col div(double val) {
-		val = 1 / val;
+	public Col div(float val) {
+        val = 1 / val;
 		return new Col(r * val, g * val, b * val);
 	}
+
+    public void addSet(Col c) {
+        r += c.r;
+        g += c.g;
+        b += c.b;
+    }
+
+    public void mulSet(Col c) {
+        r *= c.r;
+        g *= c.g;
+        b *= c.b;
+    }
+
+    public void mulSet(float val) {
+        r *= val;
+        g *= val;
+        b *= val;
+    }
+
+    public void divSet(float val) {
+        val = 1 / val;
+        r *= val;
+        g *= val;
+        b *= val;
+    }
 
 	public int toInt() {
 		int r1 = Math.max(0, Math.min(255, (int) (255.0f * Math.pow(r, 1.0f / 2.2f))));
@@ -51,8 +73,8 @@ public final class Col {
 		return (r1 << 16) + (g1 << 8) + b1;
 	}
 
-	public double lum() {
-		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	public float lum() {
+		return 0.2126f * r + 0.7152f * g + 0.0722f * b;
 	}
 
     @Override
